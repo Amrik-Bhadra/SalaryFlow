@@ -14,21 +14,6 @@ var corsOption = {
     optionsSuccessStatus: 200
 }
 
-// var sessionOptions = {
-//     secret: '&&#(@@^%$)',
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie:{
-//         secure: false,
-//         maxAge: 600000,
-//         httpOnly: true,
-//         sameSite: 'lax'
-//     },
-//     unset: 'destroy',
-//     name: 'sessionId',
-//     exposeHeaders: ['Set-Cookie']
-// };
-
 var port = process.env.PORT || 3000;
 
 // middlewares
