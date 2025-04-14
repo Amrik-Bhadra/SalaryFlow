@@ -1,14 +1,9 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    employee_id: {
-        type: String,
-        required: true,
-        unique: true
-    },
     name: {
         type: String,
-        required: true
+        // required: true
     },
     email: {
         type: String,
@@ -42,7 +37,7 @@ const userSchema = new mongoose.Schema({
     work_type: {
         type: String,
         enum: ["onsite", "office"],
-        required: true
+        // required: true
     },
     // Only for onsite employees
     assigned_project: {

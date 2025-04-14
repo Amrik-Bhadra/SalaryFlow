@@ -11,11 +11,14 @@ const otpEmailTemplate = (otp) => {
     `;
 };
 
-const notificationEmailTemplate = (message) => {
+const credentialsEmailTemplate = (email, password) => {
     return `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #0056b3;">Notification</h2>
-            <p>${message}</p>
+            <h2 style="color: #0056b3;">Your Credetials to Login</h2>
+            <p>Following is one time passoword, which is to be used for the first time login. Compulsorily change your password after that</p><br>
+            <p>Email: <strong style="font-size: 18px; color: #d9534f;">${email}</strong></p>
+            <p>Password: <strong style="font-size: 18px; color: #d9534f;">${password}</strong></p>
+            <p>Link: http://localhost:3000/login</p>
             <hr>
             <footer style="font-size: 12px; color: #666;">Your Company Name - All Rights Reserved</footer>
         </div>
@@ -35,4 +38,4 @@ const payslipEmailTemplate = (employeeName, month, attachment) => {
     `;
 };
 
-module.exports = { otpEmailTemplate, notificationEmailTemplate, payslipEmailTemplate };
+module.exports = { otpEmailTemplate, credentialsEmailTemplate, payslipEmailTemplate };
