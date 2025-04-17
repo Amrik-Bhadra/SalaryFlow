@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/emailService.js');
 const { otpEmailTemplate, credentialsEmailTemplate } = require('../utils/emailTemplates.js');
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateOTP = () => Math.floor(10000 + Math.random() * 90000).toString();
 
 // create new employee controller
 const createUserController = async (req, res) => {
@@ -31,7 +31,7 @@ const createUserController = async (req, res) => {
 
         // Just return success message
         res.status(200).json({ message: 'User Created Successfully!' });
-    }catch(error){
+    } catch (error) {
         res.status(500).json({ message: 'Error while Creating User' });
     }
 }
@@ -45,7 +45,7 @@ const loginController = async (req, res) => {
             return res.status(401).json({ message: 'Email enetered is invalid!' });
         }
 
-        const isPasswordMatched = bcrypt.compare(password, user.password);
+        const isPasswordMatched = await bcrypt.compare(password, user.password);
         if (!isPasswordMatched) {
             return res.status(401).json({ message: 'Wrong Password!' });
         }
@@ -61,14 +61,15 @@ const loginController = async (req, res) => {
         // Store OTP in DB
         await Otp.create({ email, code: otp, expiresAt });
 
-        res.cookie("pendingUser", email, {
+        const task = "login"
+        res.cookie("pendingUser", { email, task }, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge: 5 * 60 * 1000 // 5 minutes
         });
 
-        return res.status(200).json({ message: "OTP sent to your email. Please verify to complete login." });
+        return res.status(200).json({ message: "OTP Sent Successfully!" });
     } catch (error) {
         console.error("Login Error:", error);
         return res.status(500).json({ message: "Internal Server Error" });
@@ -80,7 +81,7 @@ const loginController = async (req, res) => {
 const verifyOtpController = async (req, res) => {
     try {
         const { otp } = req.body;
-        const email = req.cookies.pendingUser;
+        const { email, task } = req.cookies.pendingUser;
 
         if (!email) {
             return res.status(400).json({ message: "Session expired. Please login again." });
@@ -104,32 +105,48 @@ const verifyOtpController = async (req, res) => {
         await Otp.deleteOne({ _id: record._id });
         res.clearCookie("pendingUser");
 
-        const user = await User.findOne({ email });
-        const payload = {
-            id: user._id,
-            email: user.email,
-            role: user.role
-        };
-        const secret = process.env.JWT_SECRET;
-
-        const token = jwt.sign(payload, secret, { expiresIn: '1h' });
-
-        res.cookie("authToken", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 3600000
-        });
-
-        res.status(200).json({
-            message: "Login Successful",
-            token,
-            user: {
-                _id: user._id,
+        if (task === 'login') {
+            const user = await User.findOne({ email });
+            const payload = {
+                id: user._id,
                 email: user.email,
                 role: user.role
-            }
-        });
+            };
+            const secret = process.env.JWT_SECRET;
+
+            const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+
+            res.cookie("authToken", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 3600000
+            });
+
+            res.status(200).json({
+                message: "Login Successful",
+                token,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                },
+                task
+            });
+        } else {
+            res.cookie("pendingPasswordReset", email, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 5 * 60 * 1000
+            });
+
+            res.status(200).json({
+                message: "OTP Verified Successfully!",
+                task
+            });
+        }
 
     } catch (error) {
         console.error("OTP Verification Error:", error);
@@ -137,6 +154,70 @@ const verifyOtpController = async (req, res) => {
     }
 };
 
+// forgot password controller
+const forgotPasswordController = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid Email' });
+        };
+
+        // Generate OTP
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+        // Delete previous OTPs (optional but recommended)
+        await Otp.deleteMany({ email });
+
+        await sendEmail(email, "Your OTP for Forget Password Request", otpEmailTemplate(otp));
+        // Store OTP in DB
+        await Otp.create({ email, code: otp, expiresAt });
+
+        res.cookie("pendingUser", { email, task: "resetPassword" }, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 5 * 60 * 1000 // 5 minutes
+        });
+
+        return res.status(200).json({ message: "OTP Sent Successfully!" });
+    } catch (error) {
+        console.error("Login Error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+// reset password controller
+const resetPasswordController = async (req, res) => {
+    try {
+        const email = req.cookies.pendingPasswordReset;
+        const password = req.body.password;
+
+        if (!email) {
+            return res.status(400).json({ message: "No reset request found." });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        user.password = hashedPassword;
+        await user.save();
+
+        // Clear the cookie after reset
+        res.clearCookie("pendingPasswordReset");
+
+        res.status(200).json({ message: "Password Reset successfully." });
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        res.status(500).json({ message: "Server error. Please try again later." });
+    }
+};
 
 // changePassword controller
 const changePassword = async (req, res) => {
@@ -219,5 +300,7 @@ module.exports = {
     verifyOtpController,
     createUserController,
     completeProfile,
-    changePassword
+    changePassword,
+    forgotPasswordController,
+    resetPasswordController
 };

@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
         enum: ["onsite", "office"],
         // required: true
     },
+    status: {
+        type: String,
+        enum: ["active", "blocked"],
+        default: "active"
+    },
     // Only for onsite employees
     assigned_project: {
         type: mongoose.Schema.Types.ObjectId,

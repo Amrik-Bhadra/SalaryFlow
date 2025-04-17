@@ -5,12 +5,13 @@ const cors = require('cors');
 const cookieparser = require('cookie-parser');
 const connectDB = require('./config/db');
 const authenRoutes = require('./routes/authentication.routes');
+const employeeRoutes = require('./routes/employee.routes');
 
 var corsOption = {
+    origin: ['http://localhost:5173'],
+    methods: 'GET,PATCH,PUT,POST,HEAD,DELETE',
     credentials: true,
     AccessControlAllowOrigin: true,
-    origin: ['http://localhost/5173'],
-    methods: 'GET,PATCH,PUT,POST,HEAD,DELETE',
     optionsSuccessStatus: 200
 }
 
@@ -20,7 +21,6 @@ var port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors(corsOption));
-app.options('*', cors());
 app.use(cookieparser());
 
 // connect to mongodb database
@@ -29,6 +29,7 @@ connectDB();
 // routes
 app.use('/api/auth', authenRoutes);
 app.use('/admin/auth', authenRoutes);
+app.use('/api/employee', employeeRoutes);
 
 
 //listen to server
