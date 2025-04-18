@@ -19,9 +19,10 @@ const createUserController = async (req, res) => {
             return res.status(409).json({ message: 'Email Already Exists!' });
         }
 
+        const hashedPassword = await bcrypt.hash(password, process.env.SALT);
         const newUser = new User({
             email: normalisedEmail,
-            password,
+            hashedPassword,
             role
         });
 

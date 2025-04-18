@@ -14,7 +14,6 @@ import {
   MdSettings as MdUserSettings,
 } from "react-icons/md";
 import { FaStore } from "react-icons/fa";
-import { useAuth } from "../contexts/AuthContext";
 import useAxios from "../utils/validator/useAxios";
 import toast from "react-hot-toast";
 
@@ -24,7 +23,8 @@ const AdminLayout = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const location = useLocation();
-  const { auth } = useAuth();
+  const authString = localStorage.getItem("auth");
+  const auth = authString ? JSON.parse(authString) : null;
   const axiosInstance = useAxios();
   const navigate = useNavigate();
 
@@ -139,11 +139,9 @@ const AdminLayout = () => {
   };
 
   const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
+    if (!name) return "";
+    const parts = name.trim().split(" ");
+    return parts[0][0]?.toUpperCase() + (parts[1]?.[0]?.toUpperCase() || "");
   };
 
   const getPageTitle = () => {
@@ -204,7 +202,7 @@ const AdminLayout = () => {
         className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
       >
         <div className="w-8 h-8 rounded-full bg-sky text-white flex items-center justify-center font-medium">
-          {getInitials(user.name)}
+          {getInitials(user?.name || "")}
         </div>
         <div className="hidden md:block text-left">
           <p className="text-sm font-medium text-gray-700">{user.name}</p>

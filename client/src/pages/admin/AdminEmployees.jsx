@@ -212,6 +212,7 @@ const AdminEmployees = () => {
         <AddNewEmployee
           onClose={() => setIsFormOpen(false)}
           productToEdit={editEmployee}
+          fetchEmployees = {fetchEmployees}
         />
       )}
 

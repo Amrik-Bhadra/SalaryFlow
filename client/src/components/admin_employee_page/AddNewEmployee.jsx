@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { IoAddOutline } from "react-icons/io5";
 import generateStrongPassword from "../../services/generateStrongPassword";
 import toast from "react-hot-toast";
 import useAxios from "../../utils/validator/useAxios";
 
-const AddNewEmployee = ({onClose }) => {
+const AddNewEmployee = ({onClose, fetchEmployees }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     role: "employee"
   });  
   const axiosInstance = useAxios();
-  const navigate = useNavigate();
 
   const handleGeneratePassword = () => {
     const newPassword = generateStrongPassword();
@@ -29,8 +27,8 @@ const AddNewEmployee = ({onClose }) => {
       const response = await axiosInstance.post("/admin/auth/createEmployee", formData);
       if(response.status === 200){
         toast.success(response.data.message);
+        await fetchEmployees();
         onClose();
-        navigate('/admin/employees');
       }else{
         toast.error(response.data.message);
       }
@@ -98,7 +96,7 @@ const AddNewEmployee = ({onClose }) => {
               type="submit"
               className="px-4 py-2 bg-sky text-white rounded-md"
             >
-              Add Product
+              Add Employee
             </button>
           </div>
         </form>
