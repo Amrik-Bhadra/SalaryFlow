@@ -1,36 +1,40 @@
 import { useState } from "react";
 import { CiEdit } from "react-icons/ci";
+import useAxios from "../../utils/validator/useAxios";
+import toast from "react-hot-toast";
 
-
-const EditEmployeeDetails = ({ onClose, onSubmit }) => {
+const EditEmployeeDetails = ({ employee, onClose, fetchEmployees }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    description: "",
-    unit: "",
-    price: "",
-    discount: "",
-    status: "available",
-    images: [],
+    name: employee.name,
+    email: employee.email,
+    phone: employee.phone,
+    address: employee.address,
+    designation: employee.designation,
+    work_type: employee.work_type,
+    status: employee.status
   });
-
-  const [showPreview, setShowPreview] = useState(false);
+  const axiosInstance = useAxios();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const validFiles = files.filter((file) =>
-      ["image/jpeg", "image/jpg", "image/png"].includes(file.type)
-    );
-    setFormData({ ...formData, images: validFiles });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    onSubmit(formData);
+    console.log( `Employeid: ${employee._id}`);
+    try{
+      const response = await axiosInstance.put(`/admin/updateEmployee/${employee._id}`, {...formData});
+
+      if(response.status == 200){
+        toast.success(response.data.message || "Employee Data Updated Successfully!");
+        fetchEmployees();
+        onClose();
+      }else{
+        toast.error(response.data.message || "Failed to Update Employee data");
+      }
+    }catch(error){
+      console.log(error);
+    }
   };
 
   return (
@@ -41,14 +45,14 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
             <CiEdit className="text-sky text-2xl font-semibold"/>
           </div>
           <h2 className="text-2xl font-medium text-left">
-            Edit New Product
+            Edit Employee
           </h2>
         </span>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
           <div className="col-span-1">
             <label className="block text-sm font-medium mb-2">
-              Product Name
+              Employee Name
             </label>
             <input
               type="text"
@@ -61,11 +65,36 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium mb-2">Category</label>
+            <label className="block text-sm font-medium mb-2">Email</label>
             <input
               type="text"
-              name="category"
-              value={formData.category}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full border px-3 py-2 rounded-md"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label className="block text-sm font-medium mb-2">
+              Designation
+            </label>
+            <input
+              name="designation"
+              value={formData.designation}
+              onChange={handleChange}
+              required
+              className="w-full border px-3 py-2 rounded-md"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label className="block text-sm font-medium mb-2">Phone No</label>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
               required
               className="w-full border px-3 py-2 rounded-md"
@@ -73,12 +102,10 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">
-              Description
-            </label>
+            <label className="block text-sm font-medium mb-2">Address</label>
             <textarea
-              name="description"
-              value={formData.description}
+              name="address"
+              value={formData.address}
               onChange={handleChange}
               required
               className="w-full border px-3 py-2 rounded-md"
@@ -86,43 +113,16 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium mb-2">Unit Type</label>
-            <input
-              type="text"
-              name="unit"
-              value={formData.unit}
+            <label className="block text-sm font-medium mb-2">Work Type</label>
+            <select
+              name="work_type"
+              value={formData.work_type}
               onChange={handleChange}
-              required
               className="w-full border px-3 py-2 rounded-md"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <label className="block text-sm font-medium mb-2">
-              Unit Price (Rs.)
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded-md"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <label className="block text-sm font-medium mb-2">
-              Discount (%)
-            </label>
-            <input
-              type="number"
-              name="discount"
-              value={formData.discount}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded-md"
-            />
+            >
+              <option value="available">Onsite</option>
+              <option value="out of stock">Office</option>
+            </select>
           </div>
 
           <div className="col-span-1">
@@ -133,35 +133,9 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
               onChange={handleChange}
               className="w-full border px-3 py-2 rounded-md"
             >
-              <option value="available">Available</option>
-              <option value="out of stock">Out of Stock</option>
+              <option value="available">Active</option>
+              <option value="out of stock">Block</option>
             </select>
-          </div>
-
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">
-              Upload Images
-            </label>
-            <input
-              type="file"
-              name="images"
-              multiple
-              accept="image/jpeg,image/jpg,image/png"
-              onChange={handleImageUpload}
-              className="w-full border px-3 py-2 rounded-md transition duration-300 ease-in-out hover:border-blue-400 hover:shadow-md"
-            />
-            {formData.images.length > 0 && (
-              <div className="mt-2 text-sm text-gray-600 flex items-center justify-between">
-                <span>{formData.images.length} image(s) selected</span>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(true)}
-                  className="text-blue-600 underline text-sm"
-                >
-                  Preview
-                </button>
-              </div>
-            )}
           </div>
 
           <div className="col-span-2 flex justify-between mt-4">
@@ -174,37 +148,12 @@ const EditEmployeeDetails = ({ onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
+              className="px-4 py-2 bg-sky text-white rounded-md"
             >
-              Add Product
+              Save Changes
             </button>
           </div>
         </form>
-
-        {/* Preview Modal */}
-        {showPreview && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-md w-full relative">
-              <button
-                onClick={() => setShowPreview(false)}
-                className="absolute top-2 right-2 text-gray-500 hover:text-black"
-              >
-                ✕
-              </button>
-              <h3 className="text-lg font-medium mb-4">Selected Images</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {formData.images.map((file, index) => (
-                  <img
-                    key={index}
-                    src={URL.createObjectURL(file)}
-                    alt={`preview-${index}`}
-                    className="w-full h-32 object-cover rounded border"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -38,4 +38,15 @@ const payslipEmailTemplate = (employeeName, month, attachment) => {
     `;
 };
 
-module.exports = { otpEmailTemplate, credentialsEmailTemplate, payslipEmailTemplate };
+const addedToProjectTemplate = (emp_name, title) => {
+    return `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #0056b3;">New Project Assigned!</h2>
+            <p>Hi ${emp_name}</p>
+            <p>You've been assigned to the project <strong>"${title}"<strong></p>
+            <p>Visit you dashboard to see the details!</p>
+            <hr>
+            <footer style="font-size: 12px; color: #666;">SalaryFlow - All Rights Reserved</footer>
+        </div>`;
+}
+
+module.exports = { otpEmailTemplate, credentialsEmailTemplate, payslipEmailTemplate, addedToProjectTemplate };

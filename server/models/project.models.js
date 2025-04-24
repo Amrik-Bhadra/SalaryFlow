@@ -1,42 +1,38 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
-    project_id: {
+    title: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
-    name: {
+    description:{
+        type: String
+    },
+    client_name:{
         type: String,
         required: true
     },
     status: {
         type: String,
-        enum: ["Ongoing", "Completed"],
-        default: "Ongoing"
+        enum: ["ongoing", "completed"],
+        default: "ongoing"
     },
     assigned_employees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     location: {
         latitude: { type: Number, required: true },
         longitude: { type: Number, required: true }
     },
-    // true if office-based
     office_based: { 
         type: Boolean, 
         default: false 
     }, 
-    deadline: { 
+    start_date:{
+        type: Date
+    },
+    end_date: { 
         type: Date 
     },
-    created_at: { 
-        type: Date, 
-        default: Date.now 
-    },
-    updated_at: { 
-        type: Date, 
-        default: Date.now 
-    }
-});
+}, { timestamps: true });
 
 const projectModel = mongoose.model('Project', projectSchema);
 

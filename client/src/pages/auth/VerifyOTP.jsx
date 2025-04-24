@@ -66,7 +66,7 @@ const VerifyOTP = () => {
         if (role === "admin") {
           navigate("/admin");
         } else {
-          navigate("/");
+          navigate("/employee");
         }
       }else{
         navigate('/auth/resetpassword');

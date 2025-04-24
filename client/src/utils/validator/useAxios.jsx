@@ -7,15 +7,16 @@ const useAxios = () => {
     headers: {
       "Content-Type": "application/json",
     },
-    withCredentials: true,
+    withCredentials: true,  // Ensure cookies are sent
   });
 
+  // Remove this Authorization header part since you're using cookies for auth.
   axiosInstance.interceptors.request.use(
     (config) => {
-      const auth = JSON.parse(localStorage.getItem("auth"));
-      if (auth?.token) {
-        config.headers.Authorization = `Bearer ${auth.token}`;
-      }
+      // const auth = JSON.parse(localStorage.getItem("auth"));
+      // if (auth?.token) {
+      //   config.headers.Authorization = `Bearer ${auth.token}`;
+      // }
       return config;
     },
     (error) => Promise.reject(error)

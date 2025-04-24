@@ -8,7 +8,7 @@ const {
     changePassword, 
     createUserController,
     forgotPasswordController,
-    resetPasswordController
+    resetPasswordController,
 } = require('../controllers/auth.controller');
 
 router.post('/login', loginController);
@@ -17,8 +17,6 @@ router.post('/forgotpassword', forgotPasswordController);
 router.put('/resetpassword', resetPasswordController);
 
 router.post('/createEmployee', createUserController);
-
-
 
 router.post('/profileComplete', completeProfile);
 router.put('/changePassword', changePassword);

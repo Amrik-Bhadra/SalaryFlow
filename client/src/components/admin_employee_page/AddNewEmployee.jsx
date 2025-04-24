@@ -23,19 +23,21 @@ const AddNewEmployee = ({onClose, fetchEmployees }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try{
+    console.log(formData);
+    try {
       const response = await axiosInstance.post("/admin/auth/createEmployee", formData);
-      if(response.status === 200){
-        toast.success(response.data.message);
-        await fetchEmployees();
+      if (response.status === 200) {
+        toast.success("Employee added successfully!");
+        fetchEmployees();
         onClose();
-      }else{
-        toast.error(response.data.message);
+      } else {
+        toast.error(response.data.message || "Failed to add employee");
       }
-    }catch(error){
-      toast.error(error);
+    } catch (err) {
+      console.error("API Error:", err);
+      toast.error("Something went wrong");
     }
-  };
+  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">

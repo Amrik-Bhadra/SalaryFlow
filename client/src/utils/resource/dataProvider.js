@@ -1,13 +1,13 @@
 import {
     MdDashboard,
     MdGroups,
-    MdInventory,
     MdSettings,
     MdHelp,
     MdBusinessCenter,
     MdSettings as MdUserSettings,
 } from 'react-icons/md';
-import { IoDocumentText } from "react-icons/io5";
+import { FaUser } from 'react-icons/fa6';
+import { IoDocumentText, IoDocuments } from "react-icons/io5";
 import { FaUserCheck } from "react-icons/fa6";
 
 const adminSidebarItems = [
@@ -30,7 +30,28 @@ const adminSidebarItems = [
     }
 ];
 
+const employeeSidebarItems = [
+    {
+        group: "Main",
+        items: [
+            { name: "Dashboard", icon: MdDashboard, path: "/employee/" },
+            { name: "Attendance", icon: FaUserCheck, path: "/employee/attendance" },
+            { name: "Projects", icon: MdBusinessCenter, path: "/employee/projects" },
+            { name: "PaySlips", icon: IoDocuments, path: "/employee/payslips" },
+            { name: "Profile", icon: FaUser, path: "/employee/profile" },
+        ]
+    },
+    {
+        group: "Other",
+        items: [
+            { name: "Settings", icon: MdSettings, path: "/employee/settings" },
+            { name: "Help", icon: MdHelp, path: "/employee/help" },
+        ]
+    }
+];
+
 
 export {
-    adminSidebarItems
+    adminSidebarItems,
+    employeeSidebarItems
 }

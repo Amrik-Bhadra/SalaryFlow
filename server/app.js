@@ -6,6 +6,7 @@ const cookieparser = require('cookie-parser');
 const connectDB = require('./config/db');
 const authenRoutes = require('./routes/authentication.routes');
 const employeeRoutes = require('./routes/employee.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 var corsOption = {
     origin: ['http://localhost:5173'],
@@ -30,7 +31,7 @@ connectDB();
 app.use('/api/auth', authenRoutes);
 app.use('/admin/auth', authenRoutes);
 app.use('/api/employee', employeeRoutes);
-
+app.use('/admin', adminRoutes);
 
 //listen to server
 app.listen(port, ()=>{

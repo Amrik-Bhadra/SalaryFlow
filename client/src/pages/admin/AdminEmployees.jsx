@@ -8,6 +8,7 @@ import EditEmployeeDetails from "../../components/admin_employee_page/EditEmploy
 import DeleteEmployeeModal from "../../components/admin_employee_page/DeleteEmployeeModal";
 import useAxios from "../../utils/validator/useAxios";
 import toast from "react-hot-toast";
+import NoData from "../../assets/nodata.svg";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,8 +37,13 @@ const AdminEmployees = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axiosInstance.get("/api/employee/getEmployees");        
-      setEmployees(response.data);
+      const response = await axiosInstance.get("/api/employee/getEmployees");
+      if(response.status == 200){
+        setEmployees(response.data);
+      }else{
+        setEmployees([]);
+      }
+      
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
@@ -47,9 +53,11 @@ const AdminEmployees = () => {
     e.preventDefault();
     console.log(deleteEmployeeId);
     try {
-      const response = await axiosInstance.delete('/api/employee/deleteEmployee', 
-        {data: { deleteEmployeeId }});
-  
+      const response = await axiosInstance.delete(
+        "/api/employee/deleteEmployee",
+        { data: { deleteEmployeeId } }
+      );
+
       if (response.status === 200) {
         toast.success(response.data.message);
         await fetchEmployees();
@@ -60,13 +68,10 @@ const AdminEmployees = () => {
       toast.error("Error deleting employee");
       console.error("Delete Error:", error);
     }
-  
+
     setIsDeleteModalOpen(false);
     setDeleteEmployeeId(null);
   };
-  
-
-  const handleEditProduct = () => {};
 
   useEffect(() => {
     fetchEmployees();
@@ -100,126 +105,149 @@ const AdminEmployees = () => {
         </div>
       </header>
 
-      {/* Table */}
-      <table className="w-full border-collapse">
-        <thead className="bg-[#f7f7f7] text-primary-text uppercase text-sm">
-          <tr>
-            {[
-              "#",
-              "Name",
-              "Email",
-              "Designation",
-              "Work Mode",
-              "Status",
-              "Actions",
-            ].map((heading, index) => (
-              <th
-                key={index}
-                className="px-5 py-3 text-center font-medium text-sm"
-              >
-                {heading}
-              </th>
-            ))}
-          </tr>
-        </thead>
+      {employees.length == 0 ? (
+        <div className="p-5 flex justify-center items-center">
+          <div className="flex flex-col items-center justify-center">
+            <img
+              src={NoData}
+              alt="no-data-illustration"
+              style={{ height: "20rem" }}
+            />
+            <p className="text-lg font-semibold text-[#333]">No Projects Yet</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Table */}
+          <table className="w-full border-collapse">
+            <thead className="bg-[#f7f7f7] text-primary-text uppercase text-sm">
+              <tr>
+                {[
+                  "#",
+                  "Name",
+                  "Email",
+                  "Designation",
+                  "Work Mode",
+                  "Status",
+                  "Actions",
+                ].map((heading, index) => (
+                  <th
+                    key={index}
+                    className="px-5 py-3 text-center font-medium text-sm"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-        <tbody>
-          {displayedEmployees.map((employee, index) => (
-            <tr key={employee._id} className="border-b transition text-sm">
-              <td className="py-3 px-5 text-center text-base">
-                {startIndex + index + 1}
-              </td>
-              <td className="py-3 px-5 text-center text-base">{employee.name || "--"}</td>
-              <td className="py-3 px-5 text-center text-base">{employee.email || "--"}</td>
-              <td className="py-3 px-5 text-center text-base">{employee.designation || "--"}</td>
-              <td className="py-3 px-5 text-center text-base">{employee.work_type || "--"}</td>
-              <td className="py-3 px-5 text-center text-base">
-                <p
-                  className={`w-fit mx-auto rounded-full px-2 py-1 text-base font-semibold ${getStatusColor(
-                    employee.status
-                  )}`}
-                >
-                  {employee.status || "--"}
-                </p>
-              </td>
-              <td className="py-2 px-5 text-center space-x-2 flex justify-center">
-                {/* Edit */}
-                <button
-                  className="relative group border p-2 rounded-md"
-                  onClick={() => {
-                    setEditEmployee(employee);
-                    setIsEditFormOpen(true);
-                  }}
-                >
-                  <CiEdit />
-                  <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
-                    Edit
-                  </span>
-                </button>
+            <tbody>
+              {displayedEmployees.map((employee, index) => (
+                <tr key={employee._id} className="border-b transition text-sm">
+                  <td className="py-3 px-5 text-center text-base">
+                    {startIndex + index + 1}
+                  </td>
+                  <td className="py-3 px-5 text-center text-base">
+                    {employee.name || "--"}
+                  </td>
+                  <td className="py-3 px-5 text-center text-base">
+                    {employee.email || "--"}
+                  </td>
+                  <td className="py-3 px-5 text-center text-base">
+                    {employee.designation || "--"}
+                  </td>
+                  <td className="py-3 px-5 text-center text-base">
+                    {employee.work_type || "--"}
+                  </td>
+                  <td className="py-3 px-5 text-center text-base">
+                    <p
+                      className={`w-fit mx-auto rounded-full px-2 py-1 text-base font-semibold ${getStatusColor(
+                        employee.status
+                      )}`}
+                    >
+                      {employee.status || "--"}
+                    </p>
+                  </td>
+                  <td className="py-2 px-5 text-center space-x-2 flex justify-center">
+                    {/* Edit */}
+                    <button
+                      className="relative group border p-2 rounded-md"
+                      onClick={() => {
+                        setEditEmployee(employee);
+                        setIsEditFormOpen(true);
+                      }}
+                    >
+                      <CiEdit />
+                      <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
+                        Edit
+                      </span>
+                    </button>
 
-                {/* Delete */}
-                <button
-                  className="relative group border p-2 rounded-md"
-                  onClick={() => {
-                    setDeleteEmployeeId(employee._id);
-                    setIsDeleteModalOpen(true);
-                  }}
-                >
-                  <RiDeleteBin7Line />
-                  <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
-                    Delete
-                  </span>
-                </button>
+                    {/* Delete */}
+                    <button
+                      className="relative group border p-2 rounded-md"
+                      onClick={() => {
+                        setDeleteEmployeeId(employee._id);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    >
+                      <RiDeleteBin7Line />
+                      <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
+                        Delete
+                      </span>
+                    </button>
 
-                {/* Star */}
-                <button className="relative group border p-2 rounded-md">
-                  <FaRegStar />
-                  <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
-                    Star
-                  </span>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    {/* Star */}
+                    <button className="relative group border p-2 rounded-md">
+                      <FaRegStar />
+                      <span className="absolute hidden group-hover:block text-xs text-white bg-gray-800 px-2 py-1 rounded-md -top-8 left-1/2 -translate-x-1/2 z-10">
+                        Star
+                      </span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center p-4 border-t">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-primary-btn text-white rounded-md disabled:bg-primary-bg disabled:text-primary-txt"
-        >
-          Previous
-        </button>
-        <span className="text-sm">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-primary-btn text-white rounded-md disabled:bg-primary-bg disabled:text-primary-txt"
-        >
-          Next
-        </button>
-      </div>
+          {/* Pagination */}
+          <div className="flex justify-between items-center p-4 border-t">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-primary-btn text-white rounded-md disabled:bg-primary-bg disabled:text-primary-txt"
+            >
+              Previous
+            </button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-primary-btn text-white rounded-md disabled:bg-primary-bg disabled:text-primary-txt"
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Add/Edit Form */}
       {isFormOpen && (
         <AddNewEmployee
           onClose={() => setIsFormOpen(false)}
-          productToEdit={editEmployee}
-          fetchEmployees = {fetchEmployees}
+          fetchEmployees={fetchEmployees}
         />
       )}
 
       {isEditFormOpen && (
         <EditEmployeeDetails
+          employee={editEmployee}
           onClose={() => setIsEditFormOpen(false)}
-          onSubmit={handleEditProduct}
+          fetchEmployees={fetchEmployees}
         />
       )}
 

@@ -1,27 +1,16 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState({
-    token: null,
-    user: null,
+  const [auth, setAuth] = useState(() => {
+    const storedAuth = localStorage.getItem("auth");
+    return storedAuth ? JSON.parse(storedAuth) : { user: null };
   });
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const storedAuth = localStorage.getItem("auth");
-    if (storedAuth) {
-      setAuth(JSON.parse(storedAuth));
-    }
-  }, []);
-
-  // Save to localStorage on auth change
-  useEffect(() => {
-    if (auth.token && auth.user) {
+    if (auth?.user) {
       localStorage.setItem("auth", JSON.stringify(auth));
-    } else {
-      localStorage.removeItem("auth"); // Optional cleanup
     }
   }, [auth]);
 
@@ -32,5 +21,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook
 export const useAuth = () => useContext(AuthContext);

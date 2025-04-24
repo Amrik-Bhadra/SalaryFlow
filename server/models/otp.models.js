@@ -12,6 +12,11 @@ const otpSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,
         required: true
+    },
+    task: {
+        type: String,
+        enum: ['login', 'resetPassword'],
+        required: true
     }
 }, {
     timestamps: true

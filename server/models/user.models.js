@@ -28,16 +28,20 @@ const userSchema = new mongoose.Schema({
     face_embedding: {
         type: [Number]
     },
-    department: {
-        type: String
-    },
     designation: {
         type: String
     },
     work_type: {
         type: String,
         enum: ["onsite", "office"],
-        // required: true
+    },
+    address: {
+        type: String
+    },
+    phone: {
+        type: String,
+        required: true,
+        match: /^[0-9]{10}$/,
     },
     status: {
         type: String,
