@@ -8,7 +8,8 @@ const AddNewEmployee = ({onClose, fetchEmployees }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    role: "employee"
+    role: "employee",
+    base_salary: 0,
   });  
   const axiosInstance = useAxios();
 
@@ -58,6 +59,18 @@ const AddNewEmployee = ({onClose, fetchEmployees }) => {
               type="text"
               name="email"
               value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full border px-3 py-2 rounded-md focus-within:border-sky"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label className="block text-sm font-medium mb-2">Base Salary (per month)</label>
+            <input
+              type="number"
+              name="base_salary"
+              value={formData.base_salary}
               onChange={handleChange}
               required
               className="w-full border px-3 py-2 rounded-md focus-within:border-sky"
