@@ -14,6 +14,7 @@ import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
 import toast from "react-hot-toast";
 import useAxios from "../../utils/validator/useAxios";
+import BlinkDetector from "./BlinkDetector";
 
 const EmployeeAttendance = () => {
   const [date, setDate] = useState(dayjs());
@@ -192,45 +193,46 @@ const EmployeeAttendance = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Attendance</h1>
-        <div className="flex space-x-4">
-          {!selfieData && !isCameraOpen && (
-            <button
-              onClick={handleOpenCamera}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700"
-            >
-              <FaCamera className="text-lg" />
-              <span>Open Camera</span>
-            </button>
-          )}
+      <div className="flex space-x-4">
+        {!selfieData && !isCameraOpen && (
           <button
-            onClick={handleCheckIn}
-            disabled={checkInTime || isLoading || !selfieData}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-              isLoading
-                ? "bg-gray-300 cursor-not-allowed"
-                : checkInTime
+            onClick={handleOpenCamera}
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700"
+          >
+            <FaCamera className="text-lg" />
+            <span>Open Camera</span>
+          </button>
+        )}
+
+        <button
+          onClick={handleCheckIn}
+          disabled={checkInTime || isLoading || !selfieData}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${isLoading
+              ? "bg-gray-300 cursor-not-allowed"
+              : checkInTime
                 ? "bg-green-100 text-green-700"
                 : !selfieData
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
-          >
-            {isLoading ? (
-              <>
-                <FaSpinner className="animate-spin text-lg" />
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <FaClock className="text-lg" />
-                <span>{checkInTime ? "Checked In" : "Check In"}</span>
-              </>
-            )}
-          </button>
-        </div>
+        >
+          {isLoading ? (
+            <>
+              <FaSpinner className="animate-spin text-lg" />
+              <span>Processing...</span>
+            </>
+          ) : (
+            <>
+              <FaClock className="text-lg" />
+              <span>{checkInTime ? "Checked In" : "Check In"}</span>
+            </>
+          )}
+        </button>
       </div>
+
+      {/* 👇 Add this right below to render BlinkDetector when camera is open */}
+      {isCameraOpen && <BlinkDetector />}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Stats */}
@@ -298,9 +300,8 @@ const EmployeeAttendance = () => {
                   <span className="text-gray-600">Status</span>
                 </div>
                 <span
-                  className={`font-medium ${
-                    checkInTime ? "text-green-600" : "text-yellow-600"
-                  }`}
+                  className={`font-medium ${checkInTime ? "text-green-600" : "text-yellow-600"
+                    }`}
                 >
                   {checkInTime ? "Present" : "Not Checked In"}
                 </span>
