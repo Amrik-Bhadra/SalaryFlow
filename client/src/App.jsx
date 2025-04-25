@@ -24,6 +24,7 @@ import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import EmployeePayslips from "./pages/employee/EmployeePayslips";
 
 import ErrorPage from "./pages/ErrorPage";
+import AdminPayslips from "./pages/admin/AdminPayslips";
 
 const App = () => {
   const routes = createBrowserRouter([
@@ -98,6 +99,10 @@ const App = () => {
         {
           path: "help",
           element: <AdminHelp />,
+        },
+        {
+          path: "payslips",
+          element: <AdminPayslips/>,
         }
       ],
     },

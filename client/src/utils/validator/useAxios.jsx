@@ -1,26 +1,24 @@
 import axios from "axios";
+import { useMemo } from "react";
 
 const useAxios = () => {
-  const axiosInstance = axios.create({
-    baseURL: "http://localhost:3000",
-    timeout: 10000,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    withCredentials: true,  // Ensure cookies are sent
-  });
+  const axiosInstance = useMemo(() => {
+    const instance = axios.create({
+      baseURL: "http://localhost:3000",
+      timeout: 10000,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
 
-  // Remove this Authorization header part since you're using cookies for auth.
-  axiosInstance.interceptors.request.use(
-    (config) => {
-      // const auth = JSON.parse(localStorage.getItem("auth"));
-      // if (auth?.token) {
-      //   config.headers.Authorization = `Bearer ${auth.token}`;
-      // }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+    instance.interceptors.request.use(
+      (config) => config,
+      (error) => Promise.reject(error)
+    );
+
+    return instance;
+  }, []);
 
   return axiosInstance;
 };

@@ -24,10 +24,7 @@ const userSchema = new mongoose.Schema({
     profile_picture: {
         type: String
     },
-    // Face recognition data
-    face_embedding: {
-        type: [Number]
-    },
+
     designation: {
         type: String
     },
@@ -52,6 +49,11 @@ const userSchema = new mongoose.Schema({
     assigned_project: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Project"
+    },
+    base_salary: {
+        type: Number,
+        required: true,
+        default: 0
     },
     created_at: {
         type: Date,

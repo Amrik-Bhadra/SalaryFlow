@@ -1,5 +1,7 @@
 const User = require('../models/user.models.js');
 const Project = require('../models/project.models.js');
+const Attendance = require('../models/attendance.models.js');
+const Payslip = require('../models/payslip.models.js');
 
 const getEmployeesController = async (req, res) => {
   try {
@@ -105,11 +107,63 @@ const getProjects = async (req, res) => {
   }
 }
 
+const getAttendanceByDate = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ error: "Date is required in query param" });
+    }
+
+    // Convert "2025-3-12" to start and end of that day
+    const inputDate = new Date(date);
+    const startOfDay = new Date(inputDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(inputDate.setHours(23, 59, 59, 999));
+
+    const records = await Attendance.find({
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    });
+
+    res.status(200).json(records);
+  } catch (err) {
+    console.error("Error fetching attendance by date:", err);
+    res.status(500).json({ error: "Server error while fetching attendance" });
+  }
+};
+
+const getPayslipsData = async(req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(400).json({ message: "User not found" });
+      return;
+    }
+
+    const payslips = await Payslip.find({ employee_id: user._id }).sort({ created_at: -1 });
+    if (!payslips || payslips.length === 0) {
+      res.status(400).json({ message: "No payslips found" });
+      return;
+    }
+
+    console.log('payslips: ', payslips);
+    res.status(200).json({ message: "Data Found", data: payslips });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to fetch employee data" });
+  }
+}
 
 module.exports = {
   getEmployeesController,
   deleteEmployeeController,
   getEmployeeData,
   updateEmployee,
-  getProjects
+  getProjects,
+  getAttendanceByDate,
+  getPayslipsData,
 }

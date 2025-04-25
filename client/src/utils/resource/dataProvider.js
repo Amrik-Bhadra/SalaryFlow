@@ -18,6 +18,7 @@ const adminSidebarItems = [
             { name: "Employees", icon: MdGroups, path: "/admin/employees" },
             { name: "Projects", icon: MdBusinessCenter, path: "/admin/projects" },
             { name: "Attendance", icon: FaUserCheck, path: "/admin/attendance" },
+            { name: "PaySlips", icon: IoDocuments, path: "/admin/payslips" },
             { name: "Reports", icon: IoDocumentText, path: "/admin/report" },
         ]
     },

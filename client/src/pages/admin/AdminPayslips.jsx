@@ -12,17 +12,18 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
 import useAxios from "../../utils/validator/useAxios";
-import GeneratePayslipReportModal from "../../components/admin_report_page/GeneratePayslipReportModal";
-import { IoDocumentText } from "react-icons/io5";
-import DeleteReportModal from "../../components/admin_report_page/DeleteReportModal";
+import GeneratePayslipModal from "../../components/admin_payslip_page/GeneratePayslipModal";
+import DeletePayslipModal from "../../components/admin_payslip_page/DeletePayslipModal";
 
-const AdminReports = () => {
+const AdminPayslips = () => {
+  const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [reports, setReports] = useState([]);
+  const [payslips, setPayslips] = useState([]);
   const [isDeleteModalOpen, setOpenDeleteModal] = useState(false);
   const axiosInstance = useAxios();
 
@@ -248,14 +249,32 @@ const AdminReports = () => {
   //     payslip.year.toString().includes(searchTerm)
   // );
 
+  const handleDelete = async () => {
+    try {
+      const response = await axiosInstance.delete(
+        `/admin/deletePayslip/${selectedPayslip._id}`
+      );
+      if (response.status === 200) {
+        toast.success("Payslip deleted successfully!");
+        setOpenDeleteModal(false);
+        getPaySlips();
+      } else {
+        toast.error("Failed to delete payslip");
+      }
+    } catch (err) {
+      console.error("Error deleting payslip: ", err);
+      toast.error("Error deleting payslip");
+    }
+  }
+
   const getPaySlips = useCallback(async () => {
     try {
       const response = await axiosInstance.get(
-        `/admin/getPaySlipReportsByYear?year=${selectedYear}`
+        `/admin/getPaySlips?month=${selectedMonth}&year=${selectedYear}`
       );
 
       if (response.status === 200) {
-        setReports(response.data);
+        setPayslips(response.data);
         console.log("Fetched payslips: ", response.data);
       } else {
         console.log("Error fetching payslips:", response.message);
@@ -264,25 +283,7 @@ const AdminReports = () => {
       console.error("Error fetching payslips: ", err);
       toast.error("Error fetching payslips");
     }
-  }, [axiosInstance, selectedYear]);
-
-  const handleDelete = async () => {
-    try {
-      const response = await axiosInstance.delete(
-        `/admin/deletePayslipReport/${selectedReport._id}`
-      );
-      if (response.status === 200) {
-        toast.success("Payslip Report deleted successfully!");
-        setOpenDeleteModal(false);
-        getPaySlips();
-      } else {
-        toast.error("Failed to delete payslip report");
-      }
-    } catch (err) {
-      console.error("Error deleting payslip report: ", err);
-      toast.error("Error deleting payslip report");
-    }
-  };
+  }, [axiosInstance, selectedMonth, selectedYear]);
 
   useEffect(() => {
     getPaySlips();
@@ -296,10 +297,37 @@ const AdminReports = () => {
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Report History
+                Payslip History
               </h2>
 
               <div className="flex items-center justify-center gap-x-2">
+                {/* Month Dropdown */}
+                <select
+                  className="border rounded px-2 py-1"
+                  name="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                >
+                  {[
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                  ].map((month, index) => (
+                    <option key={index + 1} value={index + 1}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+
                 {/* Year Dropdown */}
                 <select
                   className="border rounded px-2 py-1"
@@ -318,32 +346,31 @@ const AdminReports = () => {
                 </select>
 
                 <button
-                  onClick={() => setOpenGenerateModal(true)}
+                  onClick={()=>setOpenGenerateModal(true)}
                   className="px-4 py-1 bg-primary-btn-hover hover:bg-primary-btn text-white rounded-md font-semibold"
                 >
-                  Generate Report
+                  Generate Payslip
                 </button>
               </div>
             </div>
-            {reports.length > 0 ? (
+            {payslips.length > 0 ? (
               <div className="space-y-4 h-fit">
-                {reports.map((report) => (
+                {payslips.map((payslip) => (
                   <div
-                    key={report._id}
+                    key={payslip._id}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                    onClick={() => setSelectedReport(report)}
+                    onClick={() => setSelectedPayslip(payslip)}
                   >
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-blue-100 rounded-full">
-                        <IoDocumentText className="text-blue-600" />
+                        <FaMoneyBillWave className="text-blue-600" />
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {report.report_title}
+                          {payslip.employee_id.name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Date:{" "}
-                          {new Date(report.report_date).toLocaleDateString()}
+                          Net Pay: {formatCurrency(payslip.net_salary)}
                         </p>
                       </div>
                     </div>
@@ -351,7 +378,7 @@ const AdminReports = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownload(report);
+                          handleDownload(payslip);
                         }}
                         className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
                         title="Download Payslip"
@@ -359,17 +386,21 @@ const AdminReports = () => {
                         <FaDownload />
                       </button>
                       <button
-                        onClick={() => setSelectedReport(report)}
+                        onClick={() => setSelectedPayslip(payslip)}
                         className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
                         title="View Details"
                       >
                         <FaEye />
                       </button>
+
                       <button
-                        onClick={() => {
-                          setSelectedReport(report);
-                          setOpenDeleteModal(true);
-                        }}
+                        onClick={
+                          () => {
+                            setSelectedPayslip(payslip)
+                            setOpenDeleteModal(true);
+                          }
+
+                        }
                         className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
                         title="Delete"
                       >
@@ -382,7 +413,7 @@ const AdminReports = () => {
             ) : (
               <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg text-gray-500 py-2">
                 <img src={NoData} alt="no-data" className="h-44" />
-                No Report found!
+                No payslips found!
               </div>
             )}
           </div>
@@ -390,14 +421,14 @@ const AdminReports = () => {
 
         {/* Payslip Details */}
         <div className="lg:col-span-1">
-          {selectedReport ? (
+          {selectedPayslip ? (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-start mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Report Details
+                  Payslip Details
                 </h2>
                 <button
-                  onClick={() => handleDownload(selectedReport)}
+                  onClick={() => handleDownload(selectedPayslip)}
                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
                 >
                   <FaDownload />
@@ -410,10 +441,10 @@ const AdminReports = () => {
                   <div className="flex items-center space-x-3">
                     <FaCalendarAlt className="text-blue-600" />
                     <div>
-                      <p className="text-sm text-gray-600">Report Date</p>
+                      <p className="text-sm text-gray-600">Payment Date</p>
                       <p className="font-medium text-gray-900">
                         {new Date(
-                          selectedReport.report_date
+                          selectedPayslip.payment_date
                         ).toLocaleDateString()}
                       </p>
                     </div>
@@ -423,40 +454,64 @@ const AdminReports = () => {
                 {/* Earnings */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-900 mb-3">
-                    Payments Done!
+                    Earnings
                   </h3>
                   <div className="space-y-2">
-                    {selectedReport.payed_employees.map((emp, key) => (
-                      <div className="flex justify-between py-1" key={key}>
-                        <span className="text-gray-600 capitalize">
-                          {emp.name}
-                        </span>
-                        <span className="font-medium text-green-600">
-                          ₹ {emp.payslip_data?.net_salary?.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Basic Salary</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.basic_salary)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">HRA</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.hra)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">
+                        Transport
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.transport)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">Medical</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.medical)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Deductions */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-900 mb-3">
-                    Payments Yet To Done!
+                    Deductions
                   </h3>
                   <div className="space-y-2">
-                    {selectedReport.not_payed_employees.map((emp, key) => (
-                      <div className="flex justify-between py-1" key={key}>
-                        <span className="text-gray-600 capitalize">
-                          {emp.name}
-                        </span>
-                        <span className="font-medium text-red-600">
-                          ₹{" "}
-                          {emp.payslip_data?.net_salary?.toLocaleString() ||
-                            "0"}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">Tax</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.tax)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">PF</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.pf)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">
+                        Insurance
+                      </span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.insurance)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -465,7 +520,7 @@ const AdminReports = () => {
                   <div className="flex justify-between">
                     <span className="font-medium text-gray-900">Net Pay</span>
                     <span className="font-bold text-green-600">
-                      {formatCurrency(selectedReport.net_salary)}
+                      {formatCurrency(selectedPayslip.net_salary)}
                     </span>
                   </div>
                 </div>
@@ -473,12 +528,12 @@ const AdminReports = () => {
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col items-center justify-center h-full text-center">
-              <IoDocumentText className="text-4xl text-gray-400 mb-4" />
+              <FaMoneyBillWave className="text-4xl text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900">
-                Select a Report
+                Select a Payslip
               </h3>
               <p className="text-gray-500 mt-2">
-                Click on any Report to view its details
+                Click on any payslip to view its details
               </p>
             </div>
           )}
@@ -487,21 +542,22 @@ const AdminReports = () => {
 
       {/* Generate Payslip Modal */}
       {generateModalOpen && (
-        <GeneratePayslipReportModal
+        <GeneratePayslipModal
           onClose={() => setOpenGenerateModal(false)}
           getPaySlips={getPaySlips}
         />
       )}
 
-      {isDeleteModalOpen && (
-        <DeleteReportModal
-          onClose={() => setOpenDeleteModal(false)}
-          onConfirm={handleDelete}
-          selectedReport={selectedReport}
-        />
-      )}
+      {
+        isDeleteModalOpen && (
+          <DeletePayslipModal
+            onClose={() => setOpenDeleteModal(false)}
+            onConfirm={handleDelete}
+          />
+        )
+      }
     </div>
   );
 };
 
-export default AdminReports;
+export default AdminPayslips;

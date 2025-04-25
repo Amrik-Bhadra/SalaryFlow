@@ -1,162 +1,19 @@
-import { useState, useRef, useEffect } from "react";
-import { FaCalendarAlt, FaClock, FaCheckCircle, FaCamera, FaMapMarkerAlt, FaSpinner, FaTimesCircle } from "react-icons/fa";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-import dayjs from 'dayjs';
-import toast from 'react-hot-toast';
-
-// Camera modal component to ensure proper mounting/unmounting
-const CameraModal = ({ onCapture, onClose }) => {
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, []);
-
-  // Start camera stream
-  const startCamera = async () => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Your browser doesn't support camera access. Please try using a modern browser like Chrome, Firefox, or Safari.");
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        
-        // Wait for video to be ready
-        await new Promise((resolve) => {
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current.play().then(resolve).catch(error => {
-              console.error("Error playing video:", error);
-              resolve();
-            });
-          };
-        });
-
-        toast.success("Camera accessed successfully");
-      }
-    } catch (err) {
-      console.error("Camera access error:", err);
-      let errorMessage = "Unable to access camera. ";
-      
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        errorMessage += "Please allow camera access in your browser settings.";
-      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        errorMessage += "No camera found. Please make sure your camera is connected.";
-      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-        errorMessage += "Your camera might be in use by another application.";
-      } else if (err.message) {
-        errorMessage += err.message;
-      }
-
-      toast.error(errorMessage, { duration: 5000 });
-      onClose();
-    }
-  };
-
-  // Stop camera stream
-  const stopCamera = () => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          try {
-            track.stop();
-          } catch (err) {
-            console.error("Error stopping track:", err);
-          }
-        });
-        streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    } catch (err) {
-      console.error("Error stopping camera:", err);
-    }
-  };
-
-  // Capture selfie
-  const handleCapture = () => {
-    try {
-      if (!videoRef.current) {
-        throw new Error("Video element not available");
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-      const selfieDataUrl = canvas.toDataURL("image/jpeg");
-      
-      onCapture(selfieDataUrl);
-      toast.success("Selfie captured successfully!");
-    } catch (error) {
-      toast.error("Failed to capture selfie");
-      console.error("Capture error:", error);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full p-6">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Take Selfie</h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={handleCapture}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              >
-                <FaCamera className="text-lg" />
-                <span>Capture</span>
-              </button>
-              <button
-                onClick={onClose}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700"
-              >
-                <FaTimesCircle className="text-lg" />
-                <span>Cancel</span>
-              </button>
-            </div>
-          </div>
-          <div className="relative w-full max-w-md mx-auto">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full rounded-lg"
-              style={{ transform: 'scaleX(-1)' }}
-            />
-            {!streamRef.current && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                <div className="text-center p-4">
-                  <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-2" />
-                  <p className="text-gray-600">Accessing camera...</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Please allow camera access when prompted
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { useState, useEffect } from "react";
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaCheckCircle,
+  FaCamera,
+  FaMapMarkerAlt,
+  FaSpinner,
+  FaTimesCircle,
+} from "react-icons/fa";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import dayjs from "dayjs";
+import toast from "react-hot-toast";
+import useAxios from "../../utils/validator/useAxios";
 
 const EmployeeAttendance = () => {
   const [date, setDate] = useState(dayjs());
@@ -166,6 +23,10 @@ const EmployeeAttendance = () => {
   const [locationAddress, setLocationAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selfieData, setSelfieData] = useState(null);
+  const [attendanceData, setAttendanceData] = useState(null);
+  const axiosInstance = useAxios();
+
+  // console.log('attendance: ', attendanceData);
 
   // Get address from coordinates using OpenStreetMap's Nominatim
   const getAddressFromCoordinates = async (latitude, longitude) => {
@@ -174,22 +35,22 @@ const EmployeeAttendance = () => {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
         {
           headers: {
-            'Accept-Language': 'en-US,en;q=0.9',
-            'User-Agent': 'SalaryFlow Employee Attendance System' // Required by Nominatim's usage policy
-          }
+            "Accept-Language": "en-US,en;q=0.9",
+            "User-Agent": "SalaryFlow Employee Attendance System", // Required by Nominatim's usage policy
+          },
         }
       );
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch address');
+        throw new Error("Failed to fetch address");
       }
 
       const data = await response.json();
-      
+
       if (data && data.display_name) {
         // Format the address in a more readable way
         const address = data.display_name;
-        const shortAddress = address.split(',').slice(0, 3).join(','); // Show first 3 parts of address
+        const shortAddress = address.split(",").slice(0, 3).join(","); // Show first 3 parts of address
         setLocationAddress(shortAddress);
         return shortAddress;
       } else {
@@ -199,6 +60,21 @@ const EmployeeAttendance = () => {
       console.error("Error getting address:", error);
       setLocationAddress("Address not available");
       return null;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "present":
+        return "#4ade80"; // green
+      case "absent":
+        return "#f87171"; // red
+      case "on-leave":
+        return "#facc15"; // yellow
+      case "half-day":
+        return "#60a5fa"; // blue
+      default:
+        return "#333333";
     }
   };
 
@@ -213,24 +89,29 @@ const EmployeeAttendance = () => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true, // Request high accuracy
           timeout: 10000, // 10 second timeout
-          maximumAge: 0 // Don't use cached position
+          maximumAge: 0, // Don't use cached position
         });
       });
 
       const locationData = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy // in meters
+        accuracy: position.coords.accuracy, // in meters
       };
-      
+
       setLocation(locationData);
-      
+
       // Get address for the location
-      await getAddressFromCoordinates(locationData.latitude, locationData.longitude);
-      
+      await getAddressFromCoordinates(
+        locationData.latitude,
+        locationData.longitude
+      );
+
       return locationData;
     } catch (error) {
-      const errorMessage = error.code ? getGeolocationErrorMessage(error.code) : "Unable to access location";
+      const errorMessage = error.code
+        ? getGeolocationErrorMessage(error.code)
+        : "Unable to access location";
       toast.error(errorMessage);
       throw error;
     }
@@ -238,7 +119,7 @@ const EmployeeAttendance = () => {
 
   // Helper function to get user-friendly geolocation error messages
   const getGeolocationErrorMessage = (errorCode) => {
-    switch(errorCode) {
+    switch (errorCode) {
       case 1:
         return "Location access denied. Please enable location services.";
       case 2:
@@ -255,35 +136,24 @@ const EmployeeAttendance = () => {
     setIsCameraOpen(true);
   };
 
-  // Handle camera close
-  const handleCloseCamera = () => {
-    setIsCameraOpen(false);
-  };
-
-  // Handle selfie capture
-  const handleSelfieCapture = (capturedSelfie) => {
-    setSelfieData(capturedSelfie);
-    setIsCameraOpen(false);
-  };
-
   const handleCheckIn = async () => {
     setIsLoading(true);
     try {
       // 1. Get location
       const locationData = await getCurrentLocation();
-      
+
       // 2. Verify required data
       if (!selfieData) {
         throw new Error("Please capture your selfie first");
       }
-      
+
       // 3. Send data to server (mock for now)
       // TODO: Implement API call to save attendance data
       console.log("Attendance Data:", {
         timestamp: new Date(),
         selfie: selfieData,
         location: locationData,
-        address: locationAddress
+        address: locationAddress,
       });
 
       setCheckInTime(new Date());
@@ -296,10 +166,29 @@ const EmployeeAttendance = () => {
     }
   };
 
+  const getAttendanceData = async () => {
+    const response = await axiosInstance.get(
+      `/api/employee/getAttendanceByDate?date=${date.format("YYYY-MM-DD")}`
+    );
+
+    if (response.status == 200) {
+      setAttendanceData(response.data[0]);
+      // console.log('attendanceData: ', response.data[0]);
+      console.log("attendance data state: ", attendanceData);
+    }
+  };
+
   // Get location on component mount
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+    getAttendanceData();
+  }, [date]);
+
+  // // get attendance detail date wise
+  // useEffect(() => {
+
+  //   getAttendanceData();
+  // }, [date]);
 
   return (
     <div className="space-y-6">
@@ -364,7 +253,9 @@ const EmployeeAttendance = () => {
                   <FaCalendarAlt className="text-blue-600" />
                   <span className="text-gray-600">Date</span>
                 </div>
-                <span className="font-medium">{new Date().toLocaleDateString()}</span>
+                <span className="font-medium">
+                  {new Date().toLocaleDateString()}
+                </span>
               </div>
               <div className="flex flex-col p-3 bg-gray-50 rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
@@ -374,7 +265,9 @@ const EmployeeAttendance = () => {
                   </div>
                   <span className="font-medium">
                     {location ? (
-                      <span className="text-green-600">✓ Detected ({location.accuracy.toFixed(0)}m)</span>
+                      <span className="text-green-600">
+                        ✓ Detected ({location.accuracy.toFixed(0)}m)
+                      </span>
                     ) : (
                       "Detecting..."
                     )}
@@ -404,7 +297,11 @@ const EmployeeAttendance = () => {
                   <FaCheckCircle className="text-blue-600" />
                   <span className="text-gray-600">Status</span>
                 </div>
-                <span className={`font-medium ${checkInTime ? "text-green-600" : "text-yellow-600"}`}>
+                <span
+                  className={`font-medium ${
+                    checkInTime ? "text-green-600" : "text-yellow-600"
+                  }`}
+                >
                   {checkInTime ? "Present" : "Not Checked In"}
                 </span>
               </div>
@@ -437,72 +334,83 @@ const EmployeeAttendance = () => {
           </div>
         </div>
 
-        {/* Calendar and Camera Section */}
+        {/* Calendar  Section */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            {isCameraOpen ? (
-              <CameraModal
-                onCapture={handleSelfieCapture}
-                onClose={handleCloseCamera}
-              />
-            ) : selfieData ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Captured Selfie</h2>
-                  <button
-                    onClick={() => {
-                      setSelfieData(null);
-                      handleOpenCamera();
+            <h2 className="text-lg font-semibold mb-4">Attendance Calendar</h2>
+            <div className="calendar-container">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateCalendar
+                  value={date}
+                  onChange={(newDate) => setDate(newDate)}
+                  renderDay={(day, selectedDates, pickersDayProps) => {
+                    const dayStr = day.format("YYYY-MM-DD");
+                    const isSameDate = attendanceData?.date === dayStr;
+                    const statusColor = isSameDate
+                      ? getStatusColor(attendanceData.status)
+                      : null;
+
+                    return (
+                      <PickersDay
+                        {...pickersDayProps}
+                        sx={{
+                          ...(statusColor && {
+                            backgroundColor: statusColor,
+                            color: "#fff",
+                            "&:hover": {
+                              backgroundColor: statusColor,
+                              opacity: 0.9,
+                            },
+                          }),
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
+
+            <div className="mt-2 border p-3 rounded-lg">
+              <h3 className="text-sky font-semibold">Attendance Details:</h3>
+              <div className="flex flex-col gap-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Status</span>
+                  <span
+                    className="font-medium text-white px-2 py-1 rounded-md"
+                    style={{
+                      backgroundColor: getStatusColor(attendanceData?.status || "NA"),
                     }}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700"
                   >
-                    <FaCamera className="text-lg" />
-                    <span>Retake</span>
-                  </button>
+                    {attendanceData?.status || "N/A"}
+                  </span>
                 </div>
-                <div className="relative w-full max-w-md mx-auto">
-                  <img
-                    src={selfieData}
-                    alt="Captured selfie"
-                    className="w-full rounded-lg"
-                  />
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Check In Time</span>
+                  <span className="font-medium">
+                    {attendanceData?.check_in_time || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Check Out Time</span>
+                  <span className="font-medium ">
+                    {attendanceData?.check_out_time || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Working Hours</span>
+                  <span className="font-medium ">
+                    {attendanceData?.totalHours || "0"} hrs
+                  </span>
                 </div>
               </div>
-            ) : (
-              <>
-                <h2 className="text-lg font-semibold mb-4">Attendance Calendar</h2>
-                <div className="calendar-container">
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DateCalendar
-                      value={date}
-                      onChange={(newDate) => setDate(newDate)}
-                      sx={{
-                        width: '100%',
-                        '& .MuiPickersDay-root.Mui-selected': {
-                          backgroundColor: '#2563eb',
-                        },
-                        '& .MuiPickersDay-root:hover': {
-                          backgroundColor: '#3b82f6',
-                        },
-                      }}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Camera Modal */}
-      {isCameraOpen && (
-        <CameraModal
-          onCapture={handleSelfieCapture}
-          onClose={handleCloseCamera}
-        />
-      )}
+      {/* camera model */}
     </div>
   );
 };
 
-export default EmployeeAttendance; 
+export default EmployeeAttendance;

@@ -1,53 +1,64 @@
-import { useState } from "react";
-import { FaDownload, FaEye, FaMoneyBillWave, FaCalendarAlt, FaSearch } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import {
+  FaDownload,
+  FaEye,
+  FaMoneyBillWave,
+  FaCalendarAlt,
+  FaSearch,
+} from "react-icons/fa";
 import { jsPDF } from "jspdf";
-import autoTable from 'jspdf-autotable';
+import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
+const authString = localStorage.getItem("auth");
+const auth = authString ? JSON.parse(authString) : null;
+import useAxios from "../../utils/validator/useAxios";
 
 const EmployeePayslips = () => {
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [payslips, setPayslips] = useState([]);
+  const axiosInstance = useAxios();
 
-  const payslips = [
-    {
-      id: 1,
-      month: "March",
-      year: 2024,
-      salary: 85000,
-      netPay: 72500,
-      paymentDate: "2024-03-31",
-      deductions: {
-        tax: 8500,
-        pf: 2500,
-        insurance: 1500,
-      },
-      allowances: {
-        hra: 25000,
-        transport: 5000,
-        medical: 2000,
-      },
-    },
-    {
-      id: 2,
-      month: "February",
-      year: 2024,
-      salary: 85000,
-      netPay: 72500,
-      paymentDate: "2024-02-29",
-      deductions: {
-        tax: 8500,
-        pf: 2500,
-        insurance: 1500,
-      },
-      allowances: {
-        hra: 25000,
-        transport: 5000,
-        medical: 2000,
-      },
-    },
-    // Add more payslip history here
-  ];
+  // const payslips = [
+  //   {
+  //     id: 1,
+  //     month: "March",
+  //     year: 2024,
+  //     salary: 85000,
+  //     netPay: 72500,
+  //     paymentDate: "2024-03-31",
+  //     deductions: {
+  //       tax: 8500,
+  //       pf: 2500,
+  //       insurance: 1500,
+  //     },
+  //     allowances: {
+  //       hra: 25000,
+  //       transport: 5000,
+  //       medical: 2000,
+  //     },
+  //   },
+  //   {
+  //     id: 2,
+  //     month: "February",
+  //     year: 2024,
+  //     salary: 85000,
+  //     netPay: 72500,
+  //     paymentDate: "2024-02-29",
+  //     deductions: {
+  //       tax: 8500,
+  //       pf: 2500,
+  //       insurance: 1500,
+  //     },
+  //     allowances: {
+  //       hra: 25000,
+  //       transport: 5000,
+  //       medical: 2000,
+  //     },
+  //   },
+  //   // Add more payslip history here
+  // ];
 
   const generatePDF = async (payslip) => {
     if (isGeneratingPDF) return;
@@ -55,7 +66,7 @@ const EmployeePayslips = () => {
 
     try {
       console.log("Starting PDF generation...");
-      
+
       // Create new PDF document (A4 format)
       const doc = new jsPDF({
         orientation: "portrait",
@@ -67,11 +78,11 @@ const EmployeePayslips = () => {
 
       // Set document properties
       doc.setProperties({
-        title: `Payslip-${payslip.month}-${payslip.year}`,
+        title: `Payslip-${new Date(payslip.payment_date).toLocaleString()}`,
         subject: "Employee Payslip",
         author: "SalaryFlow",
         keywords: "payslip, salary",
-        creator: "SalaryFlow"
+        creator: "SalaryFlow",
       });
 
       // Define page margins
@@ -87,17 +98,28 @@ const EmployeePayslips = () => {
       // Add payslip title
       doc.setFontSize(16);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Payslip for ${payslip.month} ${payslip.year}`, pageWidth / 2, margin + 10, { align: "center" });
+      doc.text(
+        `Payslip for ${new Date(payslip.payment_date).toLocaleString(
+          "en-US",
+          { timeZone: "UTC", month: "long", year: "numeric" }
+        )}`,
+        pageWidth / 2,
+        margin + 10,
+        { align: "center" }
+      );
 
       // Add employee info
       autoTable(doc, {
         startY: margin + 20,
         head: [],
         body: [
-          ["Name", "Ankur Dome"],
-          ["Employee ID", "EMP001"],
-          ["Department", "Engineering"],
-          ["Payment Date", new Date(payslip.paymentDate).toLocaleDateString()],
+          ["Name", auth.user.name],
+          ["Employee ID", payslip.employee_id],
+          ["Role", auth.user.role],
+          ["Payment Date", new Date(payslip.payment_date).toLocaleDateString(
+            "en-US",
+            { timeZone: "UTC" }
+          )],
         ],
         theme: "plain",
         styles: {
@@ -111,12 +133,22 @@ const EmployeePayslips = () => {
       });
 
       // Calculate total earnings
-      const totalEarnings = payslip.salary + Object.values(payslip.allowances).reduce((a, b) => a + b, 0);
+      const totalEarnings =
+        payslip.basic_salary +
+        payslip.hra +
+        payslip.transport +
+        payslip.medical;
+
+      const allowances = {
+        hra: payslip.hra,
+        transport: payslip.transport,
+        medical: payslip.medical,
+      };
 
       // Add earnings table
       const earningsData = [
-        ["Basic Salary", formatCurrency(payslip.salary)],
-        ...Object.entries(payslip.allowances).map(([key, value]) => [
+        ["Basic Salary", formatCurrency(payslip.basic_salary)],
+        ...Object.entries(allowances).map(([key, value]) => [
           key.charAt(0).toUpperCase() + key.slice(1),
           formatCurrency(value),
         ]),
@@ -140,16 +172,25 @@ const EmployeePayslips = () => {
         theme: "grid",
         columnStyles: {
           0: { cellWidth: 100 },
-          1: { cellWidth: 60, halign: "right" },
+          1: { cellWidth: 60, halign: "right", overflow: "linebreak" },
         },
       });
 
+      const deductions = {
+        tax: payslip.tax,
+        pf: payslip.pf,
+        insurance: payslip.insurance,
+      };
+
       // Calculate total deductions
-      const totalDeductions = Object.values(payslip.deductions).reduce((a, b) => a + b, 0);
+      const totalDeductions = Object.values(deductions).reduce(
+        (a, b) => a + b,
+        0
+      );
 
       // Add deductions table
       const deductionsData = [
-        ...Object.entries(payslip.deductions).map(([key, value]) => [
+        ...Object.entries(deductions).map(([key, value]) => [
           key.charAt(0).toUpperCase() + key.slice(1),
           formatCurrency(value),
         ]),
@@ -173,7 +214,7 @@ const EmployeePayslips = () => {
         theme: "grid",
         columnStyles: {
           0: { cellWidth: 100 },
-          1: { cellWidth: 60, halign: "right" },
+          1: { cellWidth: 60, halign: "right", overflow: "linebreak" },
         },
       });
 
@@ -181,9 +222,7 @@ const EmployeePayslips = () => {
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 10,
         head: [["Summary", "Amount"]],
-        body: [
-          ["Net Pay", formatCurrency(payslip.netPay)],
-        ],
+        body: [["Net Pay", formatCurrency(payslip.net_salary)]],
         headStyles: {
           fillColor: [25, 135, 84],
           textColor: [255, 255, 255],
@@ -197,7 +236,7 @@ const EmployeePayslips = () => {
         theme: "grid",
         columnStyles: {
           0: { cellWidth: 100 },
-          1: { cellWidth: 60, halign: "right" },
+          1: { cellWidth: 60, halign: "right", overflow: "linebreak" },
         },
       });
 
@@ -211,12 +250,20 @@ const EmployeePayslips = () => {
         { align: "center" }
       );
 
+      const date = new Date(payslip.payment_date).toLocaleString("en-US", {
+        timeZone: "UTC",
+        month: "long",
+        year: "numeric",
+      });
+
       // Save the PDF
-      doc.save(`Payslip-${payslip.month}-${payslip.year}.pdf`);
+      doc.save(`Payslip-${date.split(" ").join("_")}.pdf`);
       toast.success("Payslip downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error(`PDF Generation Error: ${error.message || 'Unknown error occurred'}`);
+      toast.error(
+        `PDF Generation Error: ${error.message || "Unknown error occurred"}`
+      );
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -234,11 +281,34 @@ const EmployeePayslips = () => {
     }).format(amount);
   };
 
-  const filteredPayslips = payslips.filter(
-    (payslip) =>
-      payslip.month.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payslip.year.toString().includes(searchTerm)
-  );
+  // const filteredPayslips = payslips.filter(
+  //   (payslip) =>
+  //     payslip.month.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     payslip.year.toString().includes(searchTerm)
+  // );
+
+  const getPaySlips = async () => {
+    try {
+      const response = await axiosInstance.post(
+        "/api/employee/getPayslipsData",
+        { email: auth.user.email }
+      );
+
+      if (response.status === 200) {
+        setPayslips(response.data.data);
+        console.log("Fetched payslips: ", response.data.data);
+      } else {
+        console.log("Error fetching payslips:", response.message);
+      }
+    } catch (err) {
+      console.error("Error fetching payslips: ", err);
+      toast.error("Error fetching payslips");
+    }
+  };
+
+  useEffect(() => {
+    getPaySlips();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -260,9 +330,11 @@ const EmployeePayslips = () => {
         {/* Payslip List */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payslip History</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Payslip History
+            </h2>
             <div className="space-y-4">
-              {filteredPayslips.map((payslip) => (
+              {payslips.map((payslip) => (
                 <div
                   key={payslip.id}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -274,10 +346,17 @@ const EmployeePayslips = () => {
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">
-                        {payslip.month} {payslip.year}
+                        {new Date(payslip.payment_date).toLocaleString(
+                          "en-US",
+                          {
+                            timeZone: "UTC",
+                            year: "numeric",
+                            month: "long",
+                          }
+                        )}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Net Pay: {formatCurrency(payslip.netPay)}
+                        Net Pay: {formatCurrency(payslip.net_salary)}
                       </p>
                     </div>
                   </div>
@@ -330,7 +409,12 @@ const EmployeePayslips = () => {
                     <div>
                       <p className="text-sm text-gray-600">Payment Date</p>
                       <p className="font-medium text-gray-900">
-                        {new Date(selectedPayslip.paymentDate).toLocaleDateString()}
+                        {new Date(
+                          selectedPayslip.payment_date
+                        ).toLocaleDateString(
+                          "en-US",
+                          { timeZone: "UTC" }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -338,35 +422,65 @@ const EmployeePayslips = () => {
 
                 {/* Earnings */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">Earnings</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">
+                    Earnings
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Basic Salary</span>
                       <span className="font-medium">
-                        {formatCurrency(selectedPayslip.salary)}
+                        {formatCurrency(selectedPayslip.basic_salary)}
                       </span>
                     </div>
-                    {Object.entries(selectedPayslip.allowances).map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span className="text-gray-600 capitalize">{key}</span>
-                        <span className="font-medium">{formatCurrency(value)}</span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">HRA</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.hra)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">
+                        Transport
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.transport)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">Medical</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedPayslip.medical)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Deductions */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">Deductions</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">
+                    Deductions
+                  </h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedPayslip.deductions).map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span className="text-gray-600 capitalize">{key}</span>
-                        <span className="font-medium text-red-600">
-                          -{formatCurrency(value)}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">Tax</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.tax)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">PF</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.pf)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">
+                        Insurance
+                      </span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedPayslip.insurance)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -375,7 +489,7 @@ const EmployeePayslips = () => {
                   <div className="flex justify-between">
                     <span className="font-medium text-gray-900">Net Pay</span>
                     <span className="font-bold text-green-600">
-                      {formatCurrency(selectedPayslip.netPay)}
+                      {formatCurrency(selectedPayslip.net_salary)}
                     </span>
                   </div>
                 </div>
@@ -384,7 +498,9 @@ const EmployeePayslips = () => {
           ) : (
             <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col items-center justify-center h-full text-center">
               <FaMoneyBillWave className="text-4xl text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">Select a Payslip</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                Select a Payslip
+              </h3>
               <p className="text-gray-500 mt-2">
                 Click on any payslip to view its details
               </p>
@@ -396,4 +512,4 @@ const EmployeePayslips = () => {
   );
 };
 
-export default EmployeePayslips; 
+export default EmployeePayslips;
