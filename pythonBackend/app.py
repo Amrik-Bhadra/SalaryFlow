@@ -14,16 +14,17 @@ if reference_img is None:
     print("reference.jpg not found or unreadable!")
     raise FileNotFoundError("reference.jpg not found in the current directory.")
 
+
 @app.route("/verify", methods=["POST"])
 def verify():
     try:
         # Get the request data (JSON)
         data = request.get_json()
-        if not data or 'image' not in data:
+        if not data or "image" not in data:
             return jsonify({"message": " No image data provided."}), 400
 
         # Decode base64 image data
-        image_data = data['image'].split(',')[1]
+        image_data = data["image"].split(",")[1]
         decoded = base64.b64decode(image_data)
         np_arr = np.frombuffer(decoded, np.uint8)
         captured_img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -34,27 +35,29 @@ def verify():
         print("Verifying face...")
 
         # Use DeepFace to verify the face
-        result = DeepFace.verify(captured_img, reference_img, enforce_detection=True)
+        result = DeepFace.verify(captured_img, reference_img,model_name="ArcFace", enforce_detection=True)
 
         print(" Verification result:", result)
 
         # Return verification result based on the DeepFace comparison
         if result.get("verified"):
-            return jsonify({"result": "matched", "message": "Face verified. Attendance marked!"})
+            return jsonify(
+                {"result": "matched", "message": "Face verified. Attendance marked!"}
+            )
         else:
             return jsonify({"result": "unmatched", "message": "Face not matched."})
-
 
         # working -> Harish
         # if result.get("verified"):
         #     return jsonify({"message": "Face verified. Attendance marked!"})
         # else:
         #     return jsonify({"message": "Face not matched."})
-        
+
     except Exception as e:
         # Log the error message for debugging
         print(" Error during verification:", str(e))
         return jsonify({"message": f"Error: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
@@ -72,3 +75,4 @@ if __name__ == "__main__":
 #   },
 #   "time": 1.23                           Time taken for verification (in seconds)
 # }
+

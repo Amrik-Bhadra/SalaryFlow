@@ -208,12 +208,12 @@ const EmployeeAttendance = () => {
           onClick={handleCheckIn}
           disabled={checkInTime || isLoading || !selfieData}
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${isLoading
-              ? "bg-gray-300 cursor-not-allowed"
-              : checkInTime
-                ? "bg-green-100 text-green-700"
-                : !selfieData
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+            ? "bg-gray-300 cursor-not-allowed"
+            : checkInTime
+              ? "bg-green-100 text-green-700"
+              : !selfieData
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
         >
           {isLoading ? (
@@ -230,8 +230,23 @@ const EmployeeAttendance = () => {
         </button>
       </div>
 
-      {/* 👇 Add this right below to render BlinkDetector when camera is open */}
-      {isCameraOpen && <BlinkDetector />}
+      {/* Add this right below to render BlinkDetector when camera is open */}
+      {/* {isCameraOpen && <BlinkDetector />} */}
+
+      {isCameraOpen ? (
+        <BlinkDetector
+          onFaceMatched={() => {
+            setSelfieData('matched');
+            setIsCameraOpen(false);
+          }}
+        />
+      ) : (
+        selfieData === 'matched' && (
+          <div className="text-green-600 font-semibold mt-4">
+            Selfie verified, please check in!
+          </div>
+        )
+      )}
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -290,9 +305,10 @@ const EmployeeAttendance = () => {
                   <FaCamera className="text-blue-600" />
                   <span className="text-gray-600">Selfie</span>
                 </div>
-                <span className="font-medium">
+                <span className={`font-medium ${selfieData ? 'text-green-600' : 'text-red-500'}`}>
                   {selfieData ? "✓ Captured" : "Not Captured"}
                 </span>
+
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">

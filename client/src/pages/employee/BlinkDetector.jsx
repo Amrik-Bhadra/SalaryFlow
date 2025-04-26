@@ -3,7 +3,7 @@ import Webcam from "react-webcam";
 import * as faceapi from "face-api.js";
 import axios from "axios";
 
-export default function BlinkDetector() {
+export default function BlinkDetector(props) {
   const webcamRef = useRef(null);
   const earFramesRef = useRef(0);
 
@@ -42,8 +42,6 @@ export default function BlinkDetector() {
     const rightEye = rightEyeIndices.map(i => landmarks[i]);
     return (calcEAR(leftEye) + calcEAR(rightEye)) / 2.0;
   };
-
-
 
   const triggerBlink = useCallback(() => {
     setCooldown(true);
@@ -85,7 +83,7 @@ export default function BlinkDetector() {
         return;
       }
 
-      if (blinked || isVerifying || cooldown || verificationResult) {
+      if (blinked || isVerifying || cooldown || verificationResult !== null) {
         animationId = requestAnimationFrame(detect);
         return;
       }
@@ -96,14 +94,11 @@ export default function BlinkDetector() {
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }))
         .withFaceLandmarks(true);   
           
-
       if (detection?.landmarks) {
         const landmarks = detection.landmarks.positions;
         const leftEyeIndices = [36, 37, 38, 39, 40, 41];
         const rightEyeIndices = [42, 43, 44, 45, 46, 47];
         const ear = getEAR(landmarks, leftEyeIndices, rightEyeIndices);
-
-        // console.log("EAR:", ear);
 
         if (ear < EAR_THRESHOLD) {
           earFramesRef.current += 1;
@@ -128,11 +123,16 @@ export default function BlinkDetector() {
       const res = await axios.post("http://localhost:5000/verify", { image: imageSrc });
       const result = res.data.result; // "matched" or "unmatched"
       setVerificationResult(result);
-      setMessage(result === "matched" ? "Face matched " : "Face not matched  Please restart.");
+      setMessage(result === "matched" ? "Face matched!" : "Face not matched. Please restart.");
+
+      // Call the parent function if face matched
+      if (result === "matched" && props.onFaceMatched) {
+        props.onFaceMatched(result);
+      }
     } catch (err) {
       console.error(err);
       setVerificationResult("error");
-      setMessage("Verification failed Please try again.");
+      setMessage("Verification failed. Please try again.");
     }
   };
 
@@ -146,7 +146,7 @@ export default function BlinkDetector() {
   return (
     <div className="text-center">
       <h2 className="text-xl font-bold mb-4">{message}</h2>
-      {(!verificationResult || verificationResult === "matched") && (
+      {(verificationResult === null) && (
         <Webcam
           ref={webcamRef}
           audio={false}
@@ -177,7 +177,7 @@ export default function BlinkDetector() {
           </div>
         </div>
       )}
-      {(verificationResult === "unmatched" || verificationResult === "error") && (
+      {(verificationResult === "unmatched" || verificationResult === "error" || verificationResult === "matched") && (
         <button
           className="mt-6 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
           onClick={handleRestart}
